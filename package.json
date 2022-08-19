@@ -1,0 +1,20 @@
+{
+  "name": "mikleens-avatar-snap",
+  "version": "1.0.0",
+  "description": "MetaMask snap + React component that attaches an avatar photo to your wallet",
+  "repository": "https://github.com/elenamik/mikleens-avatar-snap.git",
+  "author": "Lena Mikhaylova <44687983+elenamik@users.noreply.github.com>",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/eslint": "^7",
+    "@types/node": "^12.12.35",
+    "concurrently": "^7.1.0",
+    "eslint": "7",
+    "ts-node": "^10.8.0",
+    "typescript": "4.6.4"
+  }
+}

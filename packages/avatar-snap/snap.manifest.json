@@ -1,18 +1,18 @@
 {
-  "version": "0.7.0",
-  "proposedName": "MetaMask Template Snap",
+  "version": "0.19.0",
   "description": "A MetaMask Snap template.",
+  "proposedName": "MetaMask Template Snap",
   "repository": {
     "type": "git",
-    "url": "https://github.com/MetaMask/snap-template.git"
+    "url": "https://github.com/elenamik/mikleens-avatar-snap"
   },
   "source": {
-    "shasum": "gt/oRbvRPf5C4hizLnilmW3Evj7WKhezoc7QTWPGmrY=",
+    "shasum": "KXz8ZV+eqZnTxGX4xUd3TxCOQPOhRMgxjW5FrR6SBo0=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
         "iconPath": "images/icon.svg",
-        "packageName": "@metamask/template-snap",
+        "packageName": "@mikleens-avatar-snap/avatar-snap",
         "registry": "https://registry.npmjs.org/"
       }
     }
