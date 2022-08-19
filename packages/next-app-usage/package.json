@@ -1,7 +1,6 @@
 {
-  "name": "next-app-usage",
+  "name": "@mikleens-avatar-snap/next-app-usage",
   "version": "0.1.0",
-  "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
