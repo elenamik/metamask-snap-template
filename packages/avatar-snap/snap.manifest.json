@@ -1,13 +1,13 @@
 {
   "version": "0.19.0",
-  "description": "A MetaMask Snap template.",
-  "proposedName": "MetaMask Template Snap",
+  "description": "Avatar Snap",
+  "proposedName": "Avatar Snap",
   "repository": {
     "type": "git",
     "url": "https://github.com/elenamik/mikleens-avatar-snap"
   },
   "source": {
-    "shasum": "KXz8ZV+eqZnTxGX4xUd3TxCOQPOhRMgxjW5FrR6SBo0=",
+    "shasum": "eUy2XDjoCQfzVOtlyWW61ATRgrFhezDP+WflggaF+w4=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",

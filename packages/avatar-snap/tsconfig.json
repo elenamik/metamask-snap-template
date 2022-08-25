@@ -1,5 +1,6 @@
 {
   "extends": "../../tsconfig.json",
+  "declaration": true,
   "compilerOptions": {
     "skipLibCheck": true,
     "outDir": "./build",
