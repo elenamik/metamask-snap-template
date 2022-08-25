@@ -1,19 +1,12 @@
 import * as React from "react";
-import { Loading } from "@web3uikit/core";
-
-import { Edit, CrossCircle } from "@web3uikit/icons";
-import { create, IPFSHTTPClient } from "ipfs-http-client";
-import { useEffect } from "react";
-import { AddResult } from "ipfs-core-types/dist/src/root";
 import { isSnapInstalled } from "./utils";
-import {
-  QueryClientProvider,
-  useMutation,
-  useQuery,
-  QueryClient,
-} from "react-query";
+import { QueryClientProvider, QueryClient } from "react-query";
 import Uploader from "./Uploader";
+import { AvatarRenderer } from "./AvatarRenderer";
 
+/***
+ * Initial Setup for Rendering Details of Snap
+ */
 declare global {
   interface Window {
     ethereum: {
@@ -23,22 +16,18 @@ declare global {
     };
   }
 }
-
 export const snapId = process.env.NEXT_PUBLIC_SNAP_ID ?? "";
 if (snapId === "") {
   console.error("Please add snap ID in .env.local");
 }
+/***
+ * End of setup
+ */
 
 const AvatarSnap: React.FC = () => {
   const [mode, setMode] = React.useState<"VIEW" | "EDIT" | "UNINSTALLED">(
     "UNINSTALLED"
   );
-
-  const [snapState, setSnapState] = React.useState<{
-    isInstalled: boolean;
-  }>({
-    isInstalled: false,
-  });
 
   const installSnap = async (snapId: string) => {
     try {
@@ -50,7 +39,7 @@ const AvatarSnap: React.FC = () => {
           },
         ],
       });
-      setSnapState({ ...snapState, isInstalled: true });
+      setMode("VIEW");
     } catch (err) {
       console.error("Failed to install snap, please try again");
     }
@@ -104,34 +93,3 @@ export const Wrapped = () => {
 };
 
 export default Wrapped;
-
-const AvatarRenderer: React.FC<{ handleEdit: () => void }> = ({
-  handleEdit,
-}) => {
-  const { data: avatar, isLoading } = useQuery({
-    queryFn: async () => {
-      const { imageUrl } = await window.ethereum.request({
-        method: "wallet_invokeSnap",
-        params: [
-          snapId,
-          {
-            method: "get_avatar",
-          },
-        ],
-      });
-      return imageUrl;
-    },
-  });
-
-  if (isLoading) {
-    return <Loading spinnerColor="black" />;
-  }
-  return (
-    <div>
-      <img className="h-48 object-scale-down" src={avatar} />
-      <div className="flex">
-        <Edit fontSize="20px" onClick={handleEdit} />
-      </div>
-    </div>
-  );
-};

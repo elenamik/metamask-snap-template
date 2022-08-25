@@ -1,18 +1,17 @@
 import * as React from "react";
-import { useMutation } from "react-query";
-import { create, IPFSHTTPClient } from "ipfs-http-client";
-import { useEffect } from "react";
+import { IPFSHTTPClient } from "ipfs-http-client";
 import { AddResult } from "ipfs-core-types/dist/src/root";
-import { CrossCircle } from "@web3uikit/icons";
+import { CrossCircle, Edit } from "@web3uikit/icons";
 import { snapId } from ".";
+import { useIpfs } from "../../utils/ipfs";
+import { Loading } from "@web3uikit/core";
 
 const Uploader: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const { mutate: uploadToIPFS, isLoading } = useMutation({
-    mutationFn: async () => {},
-  });
+  const [loading, setLoading] = React.useState(false);
 
-  const uploadAvatar = (url: string) => {
-    console.log("uploading to snap", url);
+  const { ipfs } = useIpfs();
+
+  const uploadToSnap = (url: string) => {
     return window?.ethereum.request({
       method: "wallet_invokeSnap",
       params: [
@@ -25,24 +24,9 @@ const Uploader: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     });
   };
 
-  const projectId = process.env.NEXT_PUBLIC_INFURA_ID;
-  const projectSecret = process.env.NEXT_PUBLIC_INFURA_API_KEY;
-  const authorization = `Basic ${btoa(`${projectId}:${projectSecret}`)}`;
-  const [ipfs, setIpfs] = React.useState<IPFSHTTPClient | undefined>();
-
-  useEffect(() => {
-    try {
-      const ipfsConn = create({
-        url: "https://ipfs.infura.io:5001/api/v0",
-        headers: {
-          authorization,
-        },
-      });
-      setIpfs(ipfsConn);
-    } catch (error) {
-      console.error("Could not connect to IPFS", error);
-    }
-  }, []);
+  const uploadToIpfs = async (file: File) => {
+    return (ipfs as IPFSHTTPClient).add(file);
+  };
 
   const handleIPFSSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -53,30 +37,41 @@ const Uploader: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     if (!files || files.length === 0) {
       return alert("No files selected");
     }
-
+    setLoading(true);
     const file = files[0];
-
-    const result: AddResult = await (ipfs as IPFSHTTPClient).add(file);
-    const imageUrl = `https://ipfs.infura.io/ipfs/${result.path}`;
-    console.log("uploaded to IPFS", imageUrl);
-    await uploadAvatar(imageUrl);
+    const uploadResult: AddResult = await uploadToIpfs(file);
+    const imageUrl = `https://ipfs.infura.io/ipfs/${uploadResult.path}`;
+    await uploadToSnap(imageUrl);
     onClose();
   };
 
-  return (
-    <div>
-      <p>Upload File using IPFS</p>
-      {ipfs ? (
-        <form onSubmit={handleIPFSSubmit}>
-          <input name="file" type="file" />
+  if (loading) {
+    return <Loading spinnerColor="black" text="Uploading" />;
+  }
 
-          <button type="submit">Upload File</button>
+  return (
+    <div className="h-64 w-64">
+      <p className="text-lg font-semibold">Upload File using IPFS</p>
+      {ipfs ? (
+        <form onSubmit={handleIPFSSubmit} className="flex flex-col pt-6">
+          <input name="file" type="file" className="text-sm" />
+
+          <button
+            type="submit"
+            className="mt-4 w-fit rounded-2xl border-2 border-teal-900 bg-teal-100 p-2 font-semibold text-teal-900"
+          >
+            Upload File
+          </button>
         </form>
       ) : (
         <div>Could not connect to IPFS at this time</div>
       )}
 
-      <CrossCircle onClick={onClose} />
+      <div className="grid">
+        <button className="justify-self-end">
+          <CrossCircle fontSize="26px" onClick={onClose} />
+        </button>
+      </div>
     </div>
   );
 };
