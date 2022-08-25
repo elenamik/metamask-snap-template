@@ -2,28 +2,12 @@ import type { NextPage } from 'next'
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
-import {snapId} from "./_app";
 import * as React from 'react'
 import AvatarSnap from "../components/AvatarSnap";
 
 const Home: NextPage = () => {
 
-  const uploadAvatar = async () => {
-    const rest = await window?.ethereum.request({
-      method: 'wallet_invokeSnap',
-      params:[
-          snapId,
-        {
-          method:'set_avatar',
-          params: {
-            imageUrl: "https://live.staticflickr.com/65535/52296227566_e9f99fd09f_b.jpg"}
-        }
 
-      ]
-
-    })
-  console.log('RESP',rest)
-  }
 
 
 
@@ -43,7 +27,7 @@ const Home: NextPage = () => {
         <p className={styles.description}>
           Get started by enabling the snap, if you have not done so already.
           <br/>
-          To change your image, hover over the snap to edit.
+          To change your image, click the edit button.
         </p>
         <p className={styles.description}>
 

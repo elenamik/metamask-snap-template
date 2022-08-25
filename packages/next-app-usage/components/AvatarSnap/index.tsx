@@ -5,6 +5,7 @@ import { Loading } from '@web3uikit/core';
 import {Edit, CrossCircle} from '@web3uikit/icons'
 import { create, CID, IPFSHTTPClient } from "ipfs-http-client";
 import {useEffect} from "react";
+import {AddResult} from "ipfs-core-types/dist/src/root";
 
 
 
@@ -28,8 +29,7 @@ const AvatarSnap:React.FC = () => {
     }>({
         isInstalled: false,
     })
-    console.log(snapState)
-
+    console.log('STATE',snapState)
     const installSnap  = async (snapId:string )=> {
         try {
             await window?.ethereum?.request({
@@ -60,7 +60,7 @@ const AvatarSnap:React.FC = () => {
 
     React.useEffect(()=>{
         const getAvatar = async () => {
-            const {imageUrl} = await window?.ethereum.request({
+            const {imageUrl, wallet} = await window?.ethereum.request({
                 method: 'wallet_invokeSnap',
                 params:[
                     snapId,
@@ -69,13 +69,15 @@ const AvatarSnap:React.FC = () => {
                     }
                 ]
             })
+            console.log('img',imageUrl)
+            console.log('WALLET IN REQ', wallet)
             setSnapState({...snapState, avatar: imageUrl })
         }
 
-        if (snapState.isInstalled && !snapState.avatar){
+        if (snapState.isInstalled && !uploading){
             getAvatar()
         }
-    }, [snapState.isInstalled])
+    }, [snapState, uploading])
 
 
     if(uploading){
@@ -92,8 +94,8 @@ const AvatarSnap:React.FC = () => {
             </button>
         </div>
     }
-    else if (snapState.isInstalled && !snapState.avatar){
-        return <Loading />
+    else if (!snapState.avatar){
+        return <Loading spinnerColor="black" />
     } else {
         return   (
             <div>
@@ -112,12 +114,37 @@ const AvatarSnap:React.FC = () => {
 export default AvatarSnap
 
 const Uploader: React.FC<{onClose: ()=>void}> = ({onClose}) => {
-    console.log(process.env.NEXT_PUBLIC_INFURA_ID)
+
+    const uploadAvatar = (url:string) => {
+        console.log('uploading to snap',url)
+        return window?.ethereum.request({
+            method: 'wallet_invokeSnap',
+            params:[
+                snapId,
+                {
+                    method:'set_avatar',
+                    params: {
+                        imageUrl: url}
+                }
+
+            ]
+        })
+    }
+
+    const projectId = process.env.NEXT_PUBLIC_INFURA_ID
+    const projectSecret = process.env.NEXT_PUBLIC_INFURA_API_KEY
+    const authorization = "Basic " + btoa(projectId + ":" + projectSecret);
     const [ipfs, setIpfs] = React.useState<IPFSHTTPClient | undefined>()
+
+    console.log('KEYS:',projectId,projectSecret)
+
     useEffect(()=>{
         try {
             const ipfsConn = create({
                 url: "https://ipfs.infura.io:5001/api/v0",
+                headers: {
+                    authorization,
+                },
             });
             setIpfs(ipfsConn)
 
@@ -138,10 +165,13 @@ const Uploader: React.FC<{onClose: ()=>void}> = ({onClose}) => {
         }
 
         const file = files[0];
-        // upload files
-        const result = await (ipfs as IPFSHTTPClient).add(file);
 
-        console.log('event',event, 'result', result)
+        const result: AddResult = await (ipfs as IPFSHTTPClient).add(file);
+        const imageUrl = `https://ipfs.infura.io/ipfs/${result.path}`
+        console.log('uploaded to IPFS', imageUrl)
+        const snapResult = await uploadAvatar(imageUrl)
+        onClose()
+        console.log('closing')
     }
 
     return <div>
