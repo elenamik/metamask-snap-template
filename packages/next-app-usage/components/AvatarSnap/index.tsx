@@ -6,6 +6,13 @@ import { create, IPFSHTTPClient } from "ipfs-http-client";
 import { useEffect } from "react";
 import { AddResult } from "ipfs-core-types/dist/src/root";
 import { isSnapInstalled } from "./utils";
+import {
+  QueryClientProvider,
+  useMutation,
+  useQuery,
+  QueryClient,
+} from "react-query";
+import Uploader from "./Uploader";
 
 declare global {
   interface Window {
@@ -17,20 +24,22 @@ declare global {
   }
 }
 
-const snapId = process.env.NEXT_PUBLIC_SNAP_ID ?? "";
+export const snapId = process.env.NEXT_PUBLIC_SNAP_ID ?? "";
 if (snapId === "") {
   console.error("Please add snap ID in .env.local");
 }
 
 const AvatarSnap: React.FC = () => {
-  const [uploading, setUploading] = React.useState(false);
+  const [mode, setMode] = React.useState<"VIEW" | "EDIT" | "UNINSTALLED">(
+    "UNINSTALLED"
+  );
+
   const [snapState, setSnapState] = React.useState<{
     isInstalled: boolean;
-    avatar?: string;
   }>({
     isInstalled: false,
   });
-  console.log("STATE", snapState);
+
   const installSnap = async (snapId: string) => {
     try {
       await window?.ethereum?.request({
@@ -51,7 +60,7 @@ const AvatarSnap: React.FC = () => {
     const checkInstalled = async () => {
       const result = await isSnapInstalled(snapId);
       if (result) {
-        setSnapState({ ...snapState, isInstalled: result });
+        setMode("VIEW");
       }
     };
     if (window.ethereum) {
@@ -59,32 +68,7 @@ const AvatarSnap: React.FC = () => {
     }
   }, []);
 
-  React.useEffect(() => {
-    const getAvatar = async () => {
-      const { imageUrl, wallet } = await window?.ethereum.request({
-        method: "wallet_invokeSnap",
-        params: [
-          snapId,
-          {
-            method: "get_avatar",
-          },
-        ],
-      });
-      console.log("img", imageUrl);
-      console.log("WALLET IN REQ", wallet);
-      setSnapState({ ...snapState, avatar: imageUrl });
-    };
-
-    if (snapState.isInstalled && !uploading) {
-      getAvatar();
-    }
-  }, [snapState, uploading]);
-
-  if (uploading) {
-    return <Uploader onClose={() => setUploading(false)} />;
-  }
-
-  if (!snapState.isInstalled) {
+  if (mode === "UNINSTALLED") {
     return (
       <div>
         Not installed. Click here to install
@@ -97,92 +81,57 @@ const AvatarSnap: React.FC = () => {
         </button>
       </div>
     );
+  } else if (mode === "EDIT") {
+    return <Uploader onClose={() => setMode("VIEW")} />;
   }
-  if (!snapState.avatar) {
+  return (
+    <AvatarRenderer
+      handleEdit={() => {
+        setMode("EDIT");
+      }}
+    />
+  );
+};
+
+export const Wrapped = () => {
+  const [queryClient] = React.useState(() => new QueryClient());
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AvatarSnap />
+    </QueryClientProvider>
+  );
+};
+
+export default Wrapped;
+
+const AvatarRenderer: React.FC<{ handleEdit: () => void }> = ({
+  handleEdit,
+}) => {
+  const { data: avatar, isLoading } = useQuery({
+    queryFn: async () => {
+      const { imageUrl } = await window.ethereum.request({
+        method: "wallet_invokeSnap",
+        params: [
+          snapId,
+          {
+            method: "get_avatar",
+          },
+        ],
+      });
+      return imageUrl;
+    },
+  });
+
+  if (isLoading) {
     return <Loading spinnerColor="black" />;
   }
   return (
     <div>
-      <img className="h-48 object-scale-down" src={snapState.avatar} />
+      <img className="h-48 object-scale-down" src={avatar} />
       <div className="flex">
-        <Edit fontSize="20px" onClick={() => setUploading(true)} />
+        <Edit fontSize="20px" onClick={handleEdit} />
       </div>
-    </div>
-  );
-};
-
-export default AvatarSnap;
-
-const Uploader: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const uploadAvatar = (url: string) => {
-    console.log("uploading to snap", url);
-    return window?.ethereum.request({
-      method: "wallet_invokeSnap",
-      params: [
-        snapId,
-        {
-          method: "set_avatar",
-          params: { imageUrl: url },
-        },
-      ],
-    });
-  };
-
-  const projectId = process.env.NEXT_PUBLIC_INFURA_ID;
-  const projectSecret = process.env.NEXT_PUBLIC_INFURA_API_KEY;
-  const authorization = `Basic ${btoa(`${projectId}:${projectSecret}`)}`;
-  const [ipfs, setIpfs] = React.useState<IPFSHTTPClient | undefined>();
-
-  console.log("KEYS:", projectId, projectSecret);
-
-  useEffect(() => {
-    try {
-      const ipfsConn = create({
-        url: "https://ipfs.infura.io:5001/api/v0",
-        headers: {
-          authorization,
-        },
-      });
-      setIpfs(ipfsConn);
-    } catch (error) {
-      console.error("Could not connect to IPFS", error);
-    }
-  }, []);
-
-  const handleIPFSSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const form = event.target as HTMLFormElement;
-    const { files } = form[0] as HTMLInputElement;
-
-    if (!files || files.length === 0) {
-      return alert("No files selected");
-    }
-
-    const file = files[0];
-
-    const result: AddResult = await (ipfs as IPFSHTTPClient).add(file);
-    const imageUrl = `https://ipfs.infura.io/ipfs/${result.path}`;
-    console.log("uploaded to IPFS", imageUrl);
-    const snapResult = await uploadAvatar(imageUrl);
-    onClose();
-    console.log("closing");
-  };
-
-  return (
-    <div>
-      <p>Upload File using IPFS</p>
-      {ipfs ? (
-        <form onSubmit={handleIPFSSubmit}>
-          <input name="file" type="file" />
-
-          <button type="submit">Upload File</button>
-        </form>
-      ) : (
-        <div>Could not connect to IPFS at this time</div>
-      )}
-
-      <CrossCircle onClick={onClose} />
     </div>
   );
 };
