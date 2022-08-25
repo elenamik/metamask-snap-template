@@ -1,58 +1,61 @@
 import {JsonRpcId, JsonRpcVersion} from "@metamask/types";
 
-interface JsonRpcRequest<T, M> {
+export interface SnapState {
+  image?: string,
+}
+
+export interface JsonRpcRequest<T, M> {
   jsonrpc: JsonRpcVersion;
   method: M,
   id: JsonRpcId;
   params?: T;
 }
 
-interface SnapState {
-  image?: string,
-  history: string[]
+const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/3033/3033222.png"
+const defaultState: SnapState = {
+  image: defaultAvatar,
 }
-
-type SaveAvatarRequest = JsonRpcRequest<{imageURL:string}, 'set_avatar'>
-type GetAvatarRequest = JsonRpcRequest<{imageURL:string}, 'get_avatar'>
 
 async function saveState(newState: SnapState) {
   await wallet.request({
     'method': 'snap_manageState',
-    params: ['update', { newState }]
+    params: ['update', { ...newState }]
   })
 }
 
-
-async function getState() {
+async function getState(): Promise<SnapState> {
   const state = await wallet.request({
     method: 'snap_manageState',
     params: ['get'],
   });
-  if ( state === null ) return {};
+  if ( state === null ) {
+    return defaultState
+  };
   return state;
 }
 
-
+type SaveAvatarRequest = JsonRpcRequest<{imageUrl:string}, 'set_avatar'>
+type GetAvatarRequest = JsonRpcRequest<{}, 'get_avatar'>
 
 module.exports.onRpcRequest = async ({ request }: {
   origin: string;
   request: SaveAvatarRequest | GetAvatarRequest
 }) => {
-  const state = await getState();
+  const state: SnapState = await getState();
   switch (request.method) {
     case 'set_avatar':
-      const { imageURL } = request.params;
-      // TODO: add mutex?
-        const oldState = state()
-        const newState = {
-          imageURL,
-          history: oldState.history.unshift(imageURL)
-        }
-        await saveState(newState)
-      return 'OK';
+          const { imageUrl } = request.params;
+          const newState: SnapState = {
+            image: imageUrl
+          }
+          await saveState(newState)
+          return {
+            newState,
+            request,
+          }
 
     case 'get_avatar':
-      return {imageUrl: state.imageUrl}
+      return {imageUrl: state.image}
 
     default:
       throw new Error('Method not found.');
