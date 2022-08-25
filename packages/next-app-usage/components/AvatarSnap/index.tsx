@@ -19,7 +19,10 @@ declare global {
     }
 }
 
-export const snapId = 'local:http://localhost:8086'
+const snapId = process.env.NEXT_PUBLIC_SNAP_ID ?? ''
+if (snapId === ''){
+    console.error('Please add snap ID in .env.local')
+}
 
 const AvatarSnap:React.FC = () => {
 
