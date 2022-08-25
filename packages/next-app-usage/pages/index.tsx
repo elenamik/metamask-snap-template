@@ -1,17 +1,11 @@
-import type { NextPage } from 'next'
-import Head from 'next/head'
-import Image from 'next/image'
-import styles from '../styles/Home.module.css'
-import * as React from 'react'
+import type { NextPage } from "next";
+import Head from "next/head";
+import Image from "next/image";
+import styles from "../styles/Home.module.css";
+import * as React from "react";
 import AvatarSnap from "../components/AvatarSnap";
 
 const Home: NextPage = () => {
-
-
-
-
-
-
   return (
     <div className={styles.container}>
       <Head>
@@ -20,26 +14,21 @@ const Home: NextPage = () => {
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to the Avatar Snap Demo!
-        </h1>
+        <h1 className={styles.title}>Welcome to the Avatar Snap Demo!</h1>
 
         <p className={styles.description}>
           Get started by enabling the snap, if you have not done so already.
-          <br/>
+          <br />
           To change your image, click the edit button.
         </p>
-        <p className={styles.description}>
-
-        </p>
+        <p className={styles.description}></p>
 
         <h2 className={styles.subtitle}>
           Demo
-          <div className="border rounded-2xl p-4">
-            <AvatarSnap/>
+          <div className="rounded-2xl border p-4">
+            <AvatarSnap />
           </div>
         </h2>
-
       </main>
 
       <footer className={styles.footer}>
@@ -48,14 +37,14 @@ const Home: NextPage = () => {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Powered by{' '}
+          Powered by{" "}
           <span className={styles.logo}>
             <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
           </span>
         </a>
       </footer>
     </div>
-  )
-}
+  );
+};
 
-export default Home
+export default Home;
